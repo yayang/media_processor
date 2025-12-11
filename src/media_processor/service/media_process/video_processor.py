@@ -117,3 +117,54 @@ def process_folder(input_dir, output_root, use_gpu=False):
     finally:
         if list_filename.exists():
             os.remove(list_filename)
+
+
+def process_video(input_path, output_path, use_gpu=False):
+    """
+    单个视频处理函数 (1:1 转码)
+    :param input_path: 源视频文件路径 (Path对象)
+    :param output_path: 目标视频文件路径 (Path对象)
+    :param use_gpu: 是否使用 GPU
+    """
+    input_path = Path(input_path).resolve()
+    output_path = Path(output_path).resolve()
+
+    if output_path.exists():
+        print(f"⏭️  Skipping (Exists): {output_path.name}")
+        return
+
+    # 确保输出目录存在
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    print(f"🎬 Processing Video: {input_path.name}")
+    print(f"   Input:  {input_path}")
+    print(f"   Output: {output_path}")
+
+    # 构建命令
+    cmd = [
+        "-i", str(input_path),
+        "-vf", "scale='min(1280,iw)':-2",  # 720p 限制
+        "-c:a", "aac",
+        "-b:a", "128k",
+    ]
+
+    if use_gpu:
+        cmd.extend(["-c:v", "h264_videotoolbox", "-q:v", "50"])
+    else:
+        cmd.extend(["-c:v", "libx264", "-crf", "28", "-preset", "fast"])
+
+    cmd.append(str(output_path))
+
+    try:
+        start_time = time.time()
+        run_ffmpeg(cmd, use_gpu)
+        duration = time.time() - start_time
+
+        file_size = output_path.stat().st_size / (1024 * 1024)
+        print(f"✅ Done! Time: {duration:.1f}s | Size: {file_size:.2f} MB")
+
+    except Exception as e:
+        print(f"❌ Failed to process {input_path.name}: {e}")
+        # 如果失败，清理可能生成的半成品
+        if output_path.exists():
+            os.remove(output_path)

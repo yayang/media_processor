@@ -1,27 +1,14 @@
 import os
 from pathlib import Path
 
+from media_processor.constant.constant import INPUT_DIR, OUTPUT_DIR
 from media_processor.service.audio_abstracter import audio_processor
-
-# --- 📍 路径导航系统 ---
-
-# 1. 锁定当前脚本的位置 (锚点)
-# 路径: .../src/media_processor/runner/add_chapters_runner.py
-CURRENT_FILE = Path(__file__).resolve()
-
-# 2. 向上溯源找到【项目根目录】
-# parents[0] = runner
-# parents[1] = media_processor
-# parents[2] = src
-# parents[3] = 项目根目录
-PROJECT_ROOT = CURRENT_FILE.parents[3]
 
 # --- ⚙️ 批量任务配置 ---
 INPUT_DIRS = [
-    PROJECT_ROOT / "resources",
+    INPUT_DIR,
 ]
 
-OUTPUT_DIR = PROJECT_ROOT / "output" / "audios"
 
 # 每多少个视频合并成一个音频文件 (0 = 该文件夹内所有视频合并成一个长音频)
 BATCH_SIZE = 0
@@ -67,10 +54,27 @@ def main():
 
                 tasks_found += 1
 
+                # 计算相对路径
+                try:
+                    relative_path = current_path.relative_to(root_path)
+                except ValueError:
+                    # 如果不是 root_path 的子目录 (理论上不会发生，因为 walk 是从 root_path 开始的)
+                    relative_path = Path(current_path.name)
+                
+                # 拼接输出路径
+                target_output_dir = output_root / relative_path
+
                 # 调用核心处理函数
                 audio_processor.process_folder(
                     input_dir=current_path,
-                    output_root=output_root,
+                    output_root=target_output_dir, # 注意：process_folder 内部可能还是把这个当作 root，需要确认 process_folder 内部是否会再拼目录。
+                    # 查看 audio_processor 接口，如果 input_dir 是 A, output_root 是 B, 它生成的并在 B 下面吗？
+                    # 假设 process_folder 主要是输出到 output_root。
+                    # 如果原逻辑是 output_root=audios,  current_path=subset, 它会直接丢在 audios 里吗？
+                    # 原逻辑: process_folder(current_path, output_root=OUTPUT_DIR...)
+                    # 应该 audio_processor 内部会把文件输出到 output_root.
+                    # 现在我们希望输出到 output_root/sub/path.
+                    # 所以传入 target_output_dir 是对的。
                     batch_size=BATCH_SIZE
                 )
 

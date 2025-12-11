@@ -16,7 +16,7 @@ PROJECT_ROOT = CURRENT_FILE.parents[3]
 
 # --- ⚙️ 批量任务配置 ---
 INPUT_DIRS = [
-    PROJECT_ROOT / "resources",  # 递归扫描
+    PROJECT_ROOT / "resources/行车记录仪",  # 递归扫描
 ]
 
 OUTPUT_DIR = PROJECT_ROOT / "output" / "Timelapse_Collection"

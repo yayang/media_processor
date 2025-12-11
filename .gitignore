@@ -64,9 +64,7 @@ coverage.xml
 uv.lock
 
 # 本地文件夹
-constant/**
-resources/**
-output/**
+**/constant/**
 
 # MacOS
 .DS_Store
