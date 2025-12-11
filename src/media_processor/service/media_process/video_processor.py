@@ -11,8 +11,14 @@ from pathlib import Path
 如果分开压缩，每一段都只能基于局部优化，合并后的整体积往往比"一次性压缩"要大，或者画质不均匀。
 
 压缩: 使用 H.264 编码，CRF=28 (数值越大文件越小，画质越差，23是默认，28是比较明显的压缩)
-分辨率限制: 限制最大宽度为 720p (如果原视频是 4K，会自动缩放以大幅减小体积)
+分辨率限制: 根据用户选择, 限制最大宽度为 720p 或 1080p
 """
+
+from enum import Enum
+
+class VideoResolution(Enum):
+    P720 = "720p"
+    P1080 = "1080p"
 
 # --- 封装好的工具函数 ---
 
@@ -119,12 +125,14 @@ def process_folder(input_dir, output_root, use_gpu=False):
             os.remove(list_filename)
 
 
-def process_video(input_path, output_path, use_gpu=False):
+def process_video(input_path, output_path, use_gpu=False, resolution: VideoResolution = VideoResolution.P720, delete_source=False):
     """
     单个视频处理函数 (1:1 转码)
     :param input_path: 源视频文件路径 (Path对象)
     :param output_path: 目标视频文件路径 (Path对象)
     :param use_gpu: 是否使用 GPU
+    :param resolution: 目标分辨率
+    :param delete_source: 是否在成功后删除源文件
     """
     input_path = Path(input_path).resolve()
     output_path = Path(output_path).resolve()
@@ -141,9 +149,14 @@ def process_video(input_path, output_path, use_gpu=False):
     print(f"   Output: {output_path}")
 
     # 构建命令
+    scale_filter = "scale='min(1280,iw)':-2"
+    if resolution == VideoResolution.P1080:
+        scale_filter = "scale='min(1920,iw)':-2"
+
+    # 构建命令
     cmd = [
         "-i", str(input_path),
-        "-vf", "scale='min(1280,iw)':-2",  # 720p 限制
+        "-vf", scale_filter,
         "-c:a", "aac",
         "-b:a", "128k",
     ]
@@ -153,18 +166,33 @@ def process_video(input_path, output_path, use_gpu=False):
     else:
         cmd.extend(["-c:v", "libx264", "-crf", "28", "-preset", "fast"])
 
-    cmd.append(str(output_path))
+    # 使用 _processing 后缀 (如 video_processing.mp4)
+    stem = output_path.stem
+    suffix = output_path.suffix
+    processing_output_path = output_path.with_name(f"{stem}_processing{suffix}")
+    cmd.append(str(processing_output_path))
 
     try:
         start_time = time.time()
         run_ffmpeg(cmd, use_gpu)
         duration = time.time() - start_time
 
+        # 重命名回正式目标名
+        if processing_output_path.exists():
+            processing_output_path.rename(output_path)
+
         file_size = output_path.stat().st_size / (1024 * 1024)
         print(f"✅ Done! Time: {duration:.1f}s | Size: {file_size:.2f} MB")
+
+        # 删除源文件 (如果配置了且新文件存在)
+        if delete_source and output_path.exists():
+             print(f"🗑️ Deleting source: {input_path}")
+             os.remove(input_path)
 
     except Exception as e:
         print(f"❌ Failed to process {input_path.name}: {e}")
         # 如果失败，清理可能生成的半成品
-        if output_path.exists():
+        if processing_output_path.exists():
+            os.remove(processing_output_path)
+        if output_path.exists():  # 理论上这时候output_path应该还没生成，但为了保险
             os.remove(output_path)
