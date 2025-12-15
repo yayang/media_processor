@@ -8,9 +8,7 @@ from media_processor.service.media_process.video_processor import VideoResolutio
 # --- ⚙️ 批量任务配置 ---
 
 # 待扫描的根目录列表
-INPUT_DIRS = [
-    INPUT_DIR
-]
+INPUT_DIRS = [INPUT_DIR]
 
 # True=极速(Apple 硬件加速 GPU, VideoToolbox), False=高压缩(CPU)
 # 经测试, GPU压缩后的720p视频大概是CPU压缩的大35% (102M, 138M)
@@ -19,12 +17,19 @@ INPUT_DIRS = [
 # 通常完成 1小时 的视频, GPU需要6分钟, CPU需要10分钟
 USE_GPU = False
 
-# -----------------
-# 新增配置
-TARGET_RESOLUTION = VideoResolution.P720
-DELETE_SOURCE_AFTER_PROCESS = False
-# -----------------
+# 查看视频文件大小
+# ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 your_video.mp4
 
+# TARGET_RESOLUTION           分辨率设置
+# DELETE_SOURCE_AFTER_PROCESS 转码完成后是否直接删除原视频文件
+# USE_SUFFIX                  目标文件名时候带 _GPU, _CPU 后缀
+# -----------------
+TARGET_RESOLUTION = VideoResolution.P1080
+DELETE_SOURCE_AFTER_PROCESS = False
+USE_SUFFIX = False
+
+
+# -----------------
 
 # --------------------
 def is_video_folder(folder_path):
@@ -68,10 +73,10 @@ def main():
                 f_path = current_path / f
                 if f_path.is_file() and f_path.suffix.lower() in extensions:
                     # 避免处理自己生成的临时文件或输出文件 (如果输出目录重叠)
-                    # if "_720p_" in f: 
+                    # if "_720p_" in f:
                     #     continue
                     video_files.append(f_path)
-            
+
             if not video_files:
                 continue
 
@@ -80,25 +85,28 @@ def main():
                 relative_path = current_path.relative_to(root_path)
             except ValueError:
                 relative_path = Path(current_path.name)
-            
+
             target_output_dir = output_root / relative_path
-            
+
             # 处理该目录下的每个视频
             for v_path in video_files:
                 tasks_found += 1
-                
+
                 # 构造输出文件名: OriginalName_Resolution_Mode.mp4
                 mode_suffix = "_GPU" if USE_GPU else "_CPU"
                 resolution_suffix = f"_{TARGET_RESOLUTION.value}"
+                if not USE_SUFFIX:
+                    mode_suffix = ""
+                    resolution_suffix = ""
                 output_filename = f"{v_path.stem}{resolution_suffix}{mode_suffix}.mp4"
                 final_output_path = target_output_dir / output_filename
-                
+
                 video_processor.process_video(
                     input_path=v_path,
                     output_path=final_output_path,
                     use_gpu=USE_GPU,
                     resolution=TARGET_RESOLUTION,
-                    delete_source=DELETE_SOURCE_AFTER_PROCESS
+                    delete_source=DELETE_SOURCE_AFTER_PROCESS,
                 )
 
     if tasks_found == 0:

@@ -1,23 +1,31 @@
-import os
 import subprocess
 import time
 from pathlib import Path
 
-'''
+"""
 延迟摄影 (Timelapse/Hyperlapse) 的核心本质是 "抽帧" (Dropping Frames)。
 20:1 的比例意味着：每 20 帧里只保留 1 帧，或者把时间戳 (PTS) 压缩到原来的 1/20。
 音频处理：通常延迟摄影会直接丢弃音频 (-an)，因为加速 20 倍的声音全是尖锐的噪音，不可用。
-'''
+"""
+
 
 # --- 工具函数 ---
+
 
 def run_ffmpeg(cmd, use_gpu):
     try:
         # -loglevel error: 保持清爽
-        full_cmd = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-stats"] + cmd
+        full_cmd = [
+            "ffmpeg",
+            "-y",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-stats",
+        ] + cmd
         # full_cmd = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error"] + cmd
 
-        mode_str = 'GPU' if use_gpu else 'CPU'
+        mode_str = "GPU" if use_gpu else "CPU"
         print(f"  🚀 Processing ({mode_str})...")
         subprocess.run(full_cmd, check=True)
     except subprocess.CalledProcessError:
@@ -35,33 +43,42 @@ def create_timelapse(video_path, output_path, speed_ratio, use_gpu):
     pts_multiplier = 1 / speed_ratio
 
     cmd = [
-        "-i", str(video_path),
-
+        "-i",
+        str(video_path),
         # --- 核心滤镜 ---
         # setpts: 修改时间戳，实现加速
-        "-vf", f"setpts={pts_multiplier}*PTS",
-
+        "-vf",
+        f"setpts={pts_multiplier}*PTS",
         # --- 丢弃音频 (延迟摄影通常不需要) ---
         "-an",
-
         # --- 强制帧率 ---
         # 防止加速后帧率爆炸，强制回到 30fps
-        "-r", "30",
+        "-r",
+        "30",
     ]
 
     # --- 编码器分支 ---
     if use_gpu:
-        cmd.extend([
-            "-c:v", "h264_videotoolbox",
-            "-q:v", "50",  # 硬件编码质量控制
-            # "-b:v", "5000k" # 延迟摄影信息量大，如果画质不够好可以给高码率
-        ])
+        cmd.extend(
+            [
+                "-c:v",
+                "h264_videotoolbox",
+                "-q:v",
+                "50",  # 硬件编码质量控制
+                # "-b:v", "5000k" # 延迟摄影信息量大，如果画质不够好可以给高码率
+            ]
+        )
     else:
-        cmd.extend([
-            "-c:v", "libx264",
-            "-crf", "24",  # 延迟摄影建议画质稍微好一点 (默认28可能有点糊)
-            "-preset", "fast"
-        ])
+        cmd.extend(
+            [
+                "-c:v",
+                "libx264",
+                "-crf",
+                "24",  # 延迟摄影建议画质稍微好一点 (默认28可能有点糊)
+                "-preset",
+                "fast",
+            ]
+        )
 
     cmd.append(str(output_path))
 
@@ -69,6 +86,7 @@ def create_timelapse(video_path, output_path, speed_ratio, use_gpu):
 
 
 # --- 核心入口 ---
+
 
 def process_folder(input_dir, output_root, speed_ratio=20, use_gpu=True):
     """
