@@ -2,9 +2,12 @@ import os
 import subprocess
 import math
 from pathlib import Path
+from media_processor.constant.extensions import VIDEO_EXTENSIONS
+from media_processor.constant.constant import AUDIO_SAMPLE_RATE
 
 
 # --- 工具函数 ---
+
 
 def run_ffmpeg(cmd):
     try:
@@ -18,21 +21,35 @@ def run_ffmpeg(cmd):
 
 
 def extract_audio_to_wav(video_path, temp_audio_path):
-    """步骤 1: 抽取为 WAV (PCM)"""
+    """Extracts audio from video to WAV format (PCM).
+
+    Args:
+        video_path (Path): Path to the input video file.
+        temp_audio_path (Path): Path to the output temporary WAV file.
+    """
     cmd = [
-        "-i", str(video_path),
+        "-i",
+        str(video_path),
         "-vn",
-        "-ac", "2",
-        "-ar", "44100",
-        "-c:a", "pcm_s16le",
-        str(temp_audio_path)
+        "-ac",
+        "2",
+        "-ar",
+        AUDIO_SAMPLE_RATE,
+        "-c:a",
+        "pcm_s16le",
+        str(temp_audio_path),
     ]
-    # print(f"  🎵 Extracting: {video_path.name}") # 如果嫌刷屏可以注释掉
+    # print(f"  🎵 Extracting: {video_path.name}")
     run_ffmpeg(cmd)
 
 
 def merge_wavs_to_mp3(audio_files, output_path):
-    """步骤 2: 合并 WAV 并转码为 MP3"""
+    """Merges multiple WAV files and converts them to MP3.
+
+    Args:
+        audio_files (list[Path]): List of WAV file paths.
+        output_path (Path): Path to the output MP3 file.
+    """
     list_filename = output_path.parent / "temp_concat_list.txt"
 
     with open(list_filename, "w", encoding="utf-8") as f:
@@ -41,12 +58,17 @@ def merge_wavs_to_mp3(audio_files, output_path):
             f.write(f"file '{safe_path}'\n")
 
     cmd = [
-        "-f", "concat",
-        "-safe", "0",
-        "-i", str(list_filename),
-        "-c:a", "libmp3lame",
-        "-q:a", "2",
-        str(output_path)
+        "-f",
+        "concat",
+        "-safe",
+        "0",
+        "-i",
+        str(list_filename),
+        "-c:a",
+        "libmp3lame",
+        "-q:a",
+        "2",
+        str(output_path),
     ]
     print(f"  🔗 Merging -> {output_path.name}")
     run_ffmpeg(cmd)
@@ -57,11 +79,14 @@ def merge_wavs_to_mp3(audio_files, output_path):
 
 # --- 核心入口 ---
 
+
 def process_folder(input_dir, output_root, batch_size=0):
-    """
-    :param input_dir: 视频源目录
-    :param output_root: 输出总目录
-    :param batch_size: 0 为全量合并, >0 为分组合并
+    """Processes all videos in the folder, extracting and merging audio.
+
+    Args:
+        input_dir (Path): Source directory containing videos.
+        output_root (Path): Output root directory.
+        batch_size (int): Number of videos per merged audio file. 0 for all-in-one.
     """
     root = Path(input_dir).resolve()
 
@@ -71,7 +96,7 @@ def process_folder(input_dir, output_root, batch_size=0):
     target_dir = Path(output_root).resolve() / root.name
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    extensions = {".mp4", ".mov", ".mkv", ".flv", ".avi", ".ts"}
+    extensions = VIDEO_EXTENSIONS
     videos = [p for p in root.iterdir() if p.suffix.lower() in extensions]
     videos.sort()
 
@@ -99,7 +124,9 @@ def process_folder(input_dir, output_root, batch_size=0):
 
     # --- 阶段 2: 合并 MP3 ---
     # 如果 BATCH_SIZE 为 0，则设为总长度（全量合并）
-    current_batch_size = batch_size if batch_size and batch_size > 0 else len(temp_audios)
+    current_batch_size = (
+        batch_size if batch_size and batch_size > 0 else len(temp_audios)
+    )
     num_batches = math.ceil(len(temp_audios) / current_batch_size)
 
     for i in range(num_batches):

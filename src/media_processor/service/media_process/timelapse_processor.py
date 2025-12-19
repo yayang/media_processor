@@ -1,6 +1,13 @@
 import subprocess
 import time
 from pathlib import Path
+from media_processor.constant.extensions import VIDEO_EXTENSIONS
+from media_processor.constant.constant import (
+    TIMELAPSE_CRF,
+    TIMELAPSE_PRESET,
+    TIMELAPSE_FRAMERATE,
+    DEFAULT_SPEED_RATIO,
+)
 
 """
 延迟摄影 (Timelapse/Hyperlapse) 的核心本质是 "抽帧" (Dropping Frames)。
@@ -35,9 +42,13 @@ def run_ffmpeg(cmd, use_gpu):
 
 
 def create_timelapse(video_path, output_path, speed_ratio, use_gpu):
-    """
-    单文件处理核心逻辑
-    :param speed_ratio: 加速倍率 (例如 20)
+    """Creates a timelapse video from the input video.
+
+    Args:
+        video_path (Path): Path to the input video.
+        output_path (Path): Path to the output video.
+        speed_ratio (int): Speed multiplier (e.g., 20 for 20x speed).
+        use_gpu (bool): Whether to use GPU acceleration.
     """
     # 计算 PTS 缩放因子 (例如 20倍速 = 0.05)
     pts_multiplier = 1 / speed_ratio
@@ -54,7 +65,7 @@ def create_timelapse(video_path, output_path, speed_ratio, use_gpu):
         # --- 强制帧率 ---
         # 防止加速后帧率爆炸，强制回到 30fps
         "-r",
-        "30",
+        TIMELAPSE_FRAMERATE,
     ]
 
     # --- 编码器分支 ---
@@ -74,9 +85,9 @@ def create_timelapse(video_path, output_path, speed_ratio, use_gpu):
                 "-c:v",
                 "libx264",
                 "-crf",
-                "24",  # 延迟摄影建议画质稍微好一点 (默认28可能有点糊)
+                TIMELAPSE_CRF,  # 延迟摄影建议画质稍微好一点 (默认28可能有点糊)
                 "-preset",
-                "fast",
+                TIMELAPSE_PRESET,
             ]
         )
 
@@ -88,10 +99,16 @@ def create_timelapse(video_path, output_path, speed_ratio, use_gpu):
 # --- 核心入口 ---
 
 
-def process_folder(input_dir, output_root, speed_ratio=20, use_gpu=True):
-    """
-    处理整个文件夹
-    结果会保存在 output_root/源文件夹名/文件名_20x.mp4
+def process_folder(
+    input_dir, output_root, speed_ratio=DEFAULT_SPEED_RATIO, use_gpu=True
+):
+    """Processes all videos in the directory to create timelapse videos.
+
+    Args:
+        input_dir (Path): Input directory containing videos.
+        output_root (Path): Output root directory.
+        speed_ratio (int): Speed multiplier.
+        use_gpu (bool): Whether to use GPU acceleration.
     """
     input_path = Path(input_dir).resolve()
     output_root_path = Path(output_root).resolve()
@@ -100,7 +117,7 @@ def process_folder(input_dir, output_root, speed_ratio=20, use_gpu=True):
     target_dir = output_root_path / input_path.name
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    extensions = {".mp4", ".mov", ".mkv", ".flv", ".avi"}
+    extensions = VIDEO_EXTENSIONS
     videos = [p for p in input_path.iterdir() if p.suffix.lower() in extensions]
     videos.sort()
 

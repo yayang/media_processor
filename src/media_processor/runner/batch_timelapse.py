@@ -1,39 +1,24 @@
 import os
 from pathlib import Path
 
+from media_processor.constant.extensions import VIDEO_EXTENSIONS
+from media_processor.constant.constant import DEFAULT_SPEED_RATIO
 from media_processor.service.media_process import timelapse_processor
-
-# 1. 锁定当前脚本的位置 (锚点)
-# 路径: .../src/media_processor/runner/add_chapters_runner.py
-CURRENT_FILE = Path(__file__).resolve()
-
-# 2. 向上溯源找到【项目根目录】
-# parents[0] = runner
-# parents[1] = media_processor
-# parents[2] = src
-# parents[3] = 项目根目录
-PROJECT_ROOT = CURRENT_FILE.parents[3]
-
-# --- ⚙️ 批量任务配置 ---
-INPUT_DIRS = [
-    PROJECT_ROOT / "resources/行车记录仪",  # 递归扫描
-]
-
-OUTPUT_DIR = PROJECT_ROOT / "output" / "Timelapse_Collection"
-
-# 加速比例 (20:1 即 20倍速)
-SPEED_RATIO = 20
-
-# True=极速(GPU), False=画质(CPU)
-# 延迟摄影通常计算量大，推荐用 GPU，因为加速后的画面细节丢失不明显
-USE_GPU = True
 
 
 # --------------------
 
+
 def is_video_folder(folder_path):
-    """判断文件夹里是否包含视频文件"""
-    extensions = {".mp4", ".mov", ".mkv", ".flv", ".avi"}
+    """Checks if the folder contains video files.
+
+    Args:
+        folder_path (Path): Path to the folder.
+
+    Returns:
+        bool: True if video files are found, False otherwise.
+    """
+    extensions = VIDEO_EXTENSIONS
     try:
         for item in folder_path.iterdir():
             if item.is_file() and item.suffix.lower() in extensions:
@@ -45,16 +30,24 @@ def is_video_folder(folder_path):
     return False
 
 
-def main():
-    print(f"=== Starting Timelapse Batch Processing ===")
-    print(f"Speed: {SPEED_RATIO}x")
-    print(f"Mode:  {'GPU' if USE_GPU else 'CPU'}")
-    print(f"Output:{OUTPUT_DIR}\n")
+def run(input_dirs, output_dir, speed_ratio=DEFAULT_SPEED_RATIO, use_gpu=True):
+    """Executes the timelapse batch processing task.
 
-    output_root = Path(OUTPUT_DIR)
+    Args:
+        input_dirs (list[str]): List of input directories.
+        output_dir (str): Output directory.
+        speed_ratio (int): Speed multiplier.
+        use_gpu (bool): Whether to use GPU acceleration.
+    """
+    print(f"=== Starting Timelapse Batch Processing ===")
+    print(f"Speed: {speed_ratio}x")
+    print(f"Mode:  {'GPU' if use_gpu else 'CPU'}")
+    print(f"Output:{output_dir}\n")
+
+    output_root = Path(output_dir)
     tasks_found = 0
 
-    for root_dir in INPUT_DIRS:
+    for root_dir in input_dirs:
         root_path = Path(root_dir).resolve()
         if not root_path.exists():
             print(f"⚠️  Directory not found: {root_dir}")
@@ -73,8 +66,8 @@ def main():
                 timelapse_processor.process_folder(
                     input_dir=current_path,
                     output_root=output_root,
-                    speed_ratio=SPEED_RATIO,
-                    use_gpu=USE_GPU
+                    speed_ratio=speed_ratio,
+                    use_gpu=use_gpu,
                 )
 
     if tasks_found == 0:
@@ -84,4 +77,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # For backward compatibility testing
+    # Mock defaults for direct run
+    CURRENT_FILE = Path(__file__).resolve()
+    PROJECT_ROOT = CURRENT_FILE.parents[3]
+    INPUT_DIRS = [PROJECT_ROOT / "resources/行车记录仪"]
+    OUTPUT_DIR = PROJECT_ROOT / "output" / "Timelapse_Collection"
+    run(INPUT_DIRS, OUTPUT_DIR, 20, True)

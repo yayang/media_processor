@@ -1,0 +1,8 @@
+{
+    "task": "merge",
+    "_comment": "Merges all videos in each folder into a single video file (Stream Copy).",
+    "input_dirs": [
+        "/path/to/your/input/videos"
+    ],
+    "output_dir": "/path/to/your/output/merged"
+}

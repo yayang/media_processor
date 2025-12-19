@@ -6,7 +6,14 @@ from pathlib import Path
 # --- 工具函数 ---
 
 def get_duration(file_path):
-    """使用 ffprobe 获取视频总时长(秒)"""
+    """Gets the total duration of the video in seconds using ffprobe.
+
+    Args:
+        file_path (Path): Path to the video file.
+
+    Returns:
+        float: Duration in seconds.
+    """
     try:
         cmd = [
             "ffprobe", "-v", "error",
@@ -22,7 +29,14 @@ def get_duration(file_path):
 
 
 def time_to_ms(time_str):
-    """将 '01:15' 或 '01:20:30' 转换为毫秒"""
+    """Converts a time string to milliseconds.
+
+    Args:
+        time_str (str): Time string in 'MM:SS' or 'HH:MM:SS' format.
+
+    Returns:
+        int: Time in milliseconds.
+    """
     parts = list(map(int, time_str.split(":")))
     if len(parts) == 2:  # MM:SS
         return (parts[0] * 60 + parts[1]) * 1000
@@ -32,7 +46,13 @@ def time_to_ms(time_str):
 
 
 def create_metadata_file(chapters, duration_sec, temp_file_path):
-    """生成 FFmpeg 识别的 metadata 格式"""
+    """Creates a FFmpeg metadata file from the chapter list.
+
+    Args:
+        chapters (list): List of (start_time_str, title) tuples.
+        duration_sec (float): Total duration of the video.
+        temp_file_path (Path): Path to write the metadata file.
+    """
     duration_ms = int(duration_sec * 1000)
 
     content = ";FFMETADATA1\n"
@@ -59,11 +79,12 @@ def create_metadata_file(chapters, duration_sec, temp_file_path):
 
 
 def inject_chapters(video_path, output_path, chapters):
-    """
-    核心入口函数
-    :param video_path: 输入视频路径
-    :param output_path: 输出视频路径
-    :param chapters: 列表 [("00:00", "标题"), ("02:30", "标题2")]
+    """Injects chapters into a video file.
+
+    Args:
+        video_path (Path): Path to the input video.
+        output_path (Path): Path to the output video.
+        chapters (list): List of (start_time, title) tuples.
     """
     input_file = Path(video_path).resolve()
     output_file = Path(output_path).resolve()

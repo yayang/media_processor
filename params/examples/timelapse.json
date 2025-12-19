@@ -1,0 +1,11 @@
+{
+    "task": "timelapse",
+    "_comment": "Creates timelapse from dashcam footage. Batch processes files individually (1-to-1), does NOT merge.",
+    "input_dirs": [
+        "/path/to/your/dashcam/footage"
+    ],
+    "_comment_input": "Must be FOLDERS, not files. It will process all videos inside recursively.",
+    "output_dir": "/path/to/your/output/timelapse",
+    "speed_ratio": 20,
+    "use_gpu": true
+}

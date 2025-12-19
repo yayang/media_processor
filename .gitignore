@@ -1,70 +1,16 @@
-# Byte-compiled / optimized / DLL files
+.DS_Store
 __pycache__/
 *.py[cod]
-*$py.class
-
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual environments
-venv/
-env/
-.venv/
-.env/
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
-
-# PyCharm / IDE files
-.idea/
-*.iml
-
-# Environment variables
-.env
-.env.*
-
-# VS Code
+.ipynb_checkpoints/
 .vscode/
 
-# Logs
-*.log
+# Environment
+.env
+.venv/
+venv/
+env/
 
-# Lock files (根据需要决定提交或忽略)
-uv.lock
-
-# 本地文件夹
-**/constant/**
-
-# MacOS
-.DS_Store
+# Data
+output/
+resources/
+params/params.json

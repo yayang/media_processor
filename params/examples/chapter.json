@@ -1,0 +1,24 @@
+{
+    "task": "chapter",
+    "_comment": "Injects chapters into a single video file.",
+    "tasks": [
+        {
+            "file": "/path/to/your/video.mp4",
+            "chapters": [
+                [
+                    "00:00",
+                    "Start"
+                ],
+                [
+                    "01:30",
+                    "Chapter 1"
+                ],
+                [
+                    "05:00",
+                    "Ending"
+                ]
+            ]
+        }
+    ],
+    "_comment_output": "output_dir is optional. If removed, saves as video_chapters.mp4 next to source."
+}

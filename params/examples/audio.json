@@ -1,0 +1,9 @@
+{
+    "task": "audio",
+    "_comment": "Extracts audio from all videos in input_dirs and merges them.",
+    "input_dirs": [
+        "/path/to/your/input/videos"
+    ],
+    "output_dir": "/path/to/your/output/audio",
+    "batch_size": 0
+}

@@ -4,6 +4,12 @@ import subprocess
 import time
 from pathlib import Path
 
+from media_processor.constant.constant import (
+    VIDEO_CRF_DEFAULT,
+    VIDEO_PRESET_DEFAULT,
+    VIDEO_AUDIO_BITRATE,
+)
+
 """
 先合并, 后压缩
 全局码率分配 (Bitrate Efficiency): 
@@ -49,13 +55,14 @@ def process_video(
     resolution: VideoResolution = VideoResolution.P720,
     delete_source=False,
 ):
-    """
-    单个视频处理函数 (1:1 转码)
-    :param input_path: 源视频文件路径 (Path对象)
-    :param output_path: 目标视频文件路径 (Path对象)
-    :param use_gpu: 是否使用 GPU
-    :param resolution: 目标分辨率
-    :param delete_source: 是否在成功后删除源文件
+    """Transcodes a single video file.
+
+    Args:
+        input_path (Path): Path to the source video file.
+        output_path (Path): Path to the destination video file.
+        use_gpu (bool): Whether to use GPU acceleration.
+        resolution (VideoResolution): Target resolution.
+        delete_source (bool): Whether to delete the source file after success.
     """
     input_path = Path(input_path).resolve()
     output_path = Path(output_path).resolve()
@@ -87,13 +94,22 @@ def process_video(
         "-c:a",
         "aac",
         "-b:a",
-        "128k",
+        VIDEO_AUDIO_BITRATE,
     ]
 
     if use_gpu:
         cmd.extend(["-c:v", "h264_videotoolbox", "-q:v", "50"])
     else:
-        cmd.extend(["-c:v", "libx264", "-crf", "28", "-preset", "fast"])
+        cmd.extend(
+            [
+                "-c:v",
+                "libx264",
+                "-crf",
+                VIDEO_CRF_DEFAULT,
+                "-preset",
+                VIDEO_PRESET_DEFAULT,
+            ]
+        )
 
     # 使用 _processing 后缀 (如 video_processing.mp4)
     stem = output_path.stem

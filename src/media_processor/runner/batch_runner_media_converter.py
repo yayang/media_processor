@@ -2,39 +2,25 @@ import os
 from pathlib import Path
 
 from media_processor.constant.constant import INPUT_DIR, OUTPUT_DIR
+from media_processor.constant.extensions import VIDEO_EXTENSIONS
 from media_processor.service.media_process import video_processor
 from media_processor.service.media_process.video_processor import VideoResolution
 
-# --- ⚙️ 批量任务配置 ---
-
-# 待扫描的根目录列表
-INPUT_DIRS = [INPUT_DIR]
-
-# True=极速(Apple 硬件加速 GPU, VideoToolbox), False=高压缩(CPU)
-# 经测试, GPU压缩后的720p视频大概是CPU压缩的大35% (102M, 138M)
-# 比如CPU压缩后大概是原文件的10%-30%大小(2.2G -> 220M), GPU压缩后是原视频13%-40%大小
-# 对于本来就720p的文件, 转码720p后, 可能变大
-# 通常完成 1小时 的视频, GPU需要6分钟, CPU需要10分钟
-USE_GPU = False
-
-# 查看视频文件大小
-# ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 your_video.mp4
-
-# TARGET_RESOLUTION           分辨率设置
-# DELETE_SOURCE_AFTER_PROCESS 转码完成后是否直接删除原视频文件
-# USE_SUFFIX                  目标文件名时候带 _GPU, _CPU 后缀
-# -----------------
-TARGET_RESOLUTION = VideoResolution.P1080
-DELETE_SOURCE_AFTER_PROCESS = False
-USE_SUFFIX = False
-
 
 # -----------------
+
 
 # --------------------
 def is_video_folder(folder_path):
-    """判断文件夹里是否包含视频文件"""
-    extensions = {".mp4", ".mov", ".mkv", ".flv", ".avi", ".ts"}
+    """Checks if the folder contains video files.
+
+    Args:
+        folder_path (Path): Path to the folder.
+
+    Returns:
+        bool: True if video files are found, False otherwise.
+    """
+    extensions = VIDEO_EXTENSIONS
     try:
         for item in folder_path.iterdir():
             if item.is_file() and item.suffix.lower() in extensions:
@@ -44,15 +30,38 @@ def is_video_folder(folder_path):
     return False
 
 
-def main():
-    print(f"=== Starting Batch Processing ===")
-    print(f"Mode: {'GPU' if USE_GPU else 'CPU'}")
-    print(f"Output Root: {OUTPUT_DIR}\n")
+def run(
+    input_dirs,
+    output_dir,
+    use_gpu=False,
+    target_resolution="1080p",
+    delete_source=False,
+    use_suffix=False,
+):
+    """Executes the batch media conversion task.
 
-    output_root = Path(OUTPUT_DIR)
+    Args:
+        input_dirs (list[str]): List of input directories.
+        output_dir (str): Output directory.
+        use_gpu (bool): Whether to use GPU acceleration.
+        target_resolution (str): "1080p" or "720p".
+        delete_source (bool): Whether to delete source files.
+        use_suffix (bool): Whether to add suffix to output filename.
+    """
+    if target_resolution == "720p":
+        resolution_enum = VideoResolution.P720
+    else:
+        resolution_enum = VideoResolution.P1080
+
+    print(f"=== Starting Batch Processing ===")
+    print(f"Mode: {'GPU' if use_gpu else 'CPU'}")
+    print(f"Output Root: {output_dir}")
+    print(f"Resolution: {target_resolution}")
+
+    output_root = Path(output_dir)
     tasks_found = 0
 
-    for root_dir in INPUT_DIRS:
+    for root_dir in input_dirs:
         root_path = Path(root_dir).resolve()
         if not root_path.exists():
             print(f"⚠️  Directory not found: {root_dir}")
@@ -68,13 +77,11 @@ def main():
 
             # 过滤视频文件
             video_files = []
-            extensions = {".mp4", ".mov", ".mkv", ".flv", ".avi", ".ts"}
+            extensions = VIDEO_EXTENSIONS
             for f in files:
                 f_path = current_path / f
                 if f_path.is_file() and f_path.suffix.lower() in extensions:
-                    # 避免处理自己生成的临时文件或输出文件 (如果输出目录重叠)
-                    # if "_720p_" in f:
-                    #     continue
+
                     video_files.append(f_path)
 
             if not video_files:
@@ -93,9 +100,9 @@ def main():
                 tasks_found += 1
 
                 # 构造输出文件名: OriginalName_Resolution_Mode.mp4
-                mode_suffix = "_GPU" if USE_GPU else "_CPU"
-                resolution_suffix = f"_{TARGET_RESOLUTION.value}"
-                if not USE_SUFFIX:
+                mode_suffix = "_GPU" if use_gpu else "_CPU"
+                resolution_suffix = f"_{resolution_enum.value}"
+                if not use_suffix:
                     mode_suffix = ""
                     resolution_suffix = ""
                 output_filename = f"{v_path.stem}{resolution_suffix}{mode_suffix}.mp4"
@@ -104,9 +111,9 @@ def main():
                 video_processor.process_video(
                     input_path=v_path,
                     output_path=final_output_path,
-                    use_gpu=USE_GPU,
-                    resolution=TARGET_RESOLUTION,
-                    delete_source=DELETE_SOURCE_AFTER_PROCESS,
+                    use_gpu=use_gpu,
+                    resolution=resolution_enum,
+                    delete_source=delete_source,
                 )
 
     if tasks_found == 0:
@@ -116,4 +123,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from media_processor.constant.constant import INPUT_DIR, OUTPUT_DIR
+
+    run([INPUT_DIR], OUTPUT_DIR)

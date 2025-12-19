@@ -1,0 +1,12 @@
+{
+    "task": "convert",
+    "_comment": "Transcodes videos to save space. use_gpu=true is faster but larger file size.",
+    "input_dirs": [
+        "/path/to/your/input/videos"
+    ],
+    "output_dir": "/path/to/your/output/videos",
+    "use_gpu": false,
+    "resolution": "1080p",
+    "delete_source": false,
+    "use_suffix": false
+}
