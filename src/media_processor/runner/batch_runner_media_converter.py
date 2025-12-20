@@ -37,6 +37,10 @@ def run(
     target_resolution="1080p",
     delete_source=False,
     use_suffix=False,
+    compatibility_mode=False,
+    embed_subtitles=False,
+    remove_subtitle=False,
+    test_mode=False,
 ):
     """Executes the batch media conversion task.
 
@@ -47,6 +51,8 @@ def run(
         target_resolution (str): "1080p" or "720p".
         delete_source (bool): Whether to delete source files.
         use_suffix (bool): Whether to add suffix to output filename.
+        compatibility_mode (bool): Whether to enable compatibility mode.
+        embed_subtitles (bool): Whether to embed external subtitles if found.
     """
     if target_resolution == "720p":
         resolution_enum = VideoResolution.P720
@@ -57,6 +63,10 @@ def run(
     print(f"Mode: {'GPU' if use_gpu else 'CPU'}")
     print(f"Output Root: {output_dir}")
     print(f"Resolution: {target_resolution}")
+    if compatibility_mode:
+        print(f"Compatibility Mode: Enabled")
+    if embed_subtitles:
+        print(f"Subtitle Embedding: Enabled")
 
     output_root = Path(output_dir)
     tasks_found = 0
@@ -114,6 +124,10 @@ def run(
                     use_gpu=use_gpu,
                     resolution=resolution_enum,
                     delete_source=delete_source,
+                    compatibility_mode=compatibility_mode,
+                    embed_subtitles=embed_subtitles,
+                    remove_subtitle=remove_subtitle,
+                    test_mode=test_mode,
                 )
 
     if tasks_found == 0:

@@ -41,5 +41,9 @@ run:
 	PYTHONPATH=src uv run main.py run --config $(config)
 
 clean:
-	find . -type d -name "__pycache__" -exec rm -rf {} +
-	find . -type f -name "*.pyc" -delete
+	@echo "🧹 Cleaning up..."
+	@find . -type d -name "__pycache__" -exec rm -rf {} +
+	@find . -type f -name "*.pyc" -delete
+	@find . -type f -name "*_processing.*" -delete
+	@find . -type f -name ".DS_Store" -delete
+	@echo "✨ Done!"

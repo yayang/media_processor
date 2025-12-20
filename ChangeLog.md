@@ -1,4 +1,11 @@
 
+# [1.4.0] - 2025-12-20
+### New Features
+- **Standalone Subtitle**: 新增 `subtitle` 任务，支持不转码的 Stream Copy 软字慕封装。
+- **Soft Subtitle Embedding**: `convert` 任务现在会自动探测并封装同名 `.srt`/`.ass` 字幕。
+- **Multi-Audio Preservation**: 视频转码现在会保留所有音频流 (而不仅仅是第一条)。
+- **Compatibility Mode**: `convert` 任务新增 `compatibility_mode` 参数，针对老旧设备提供最强兼容性 (Deinterlace, YUV420P, High@4.1, CFR)。
+
 # [1.3.0] - 2025-12-20
 ### Architecture Refactor
 - **Unified Interface**: 引入 `main.py` 作为统一入口，替代分散的 runner 脚本。

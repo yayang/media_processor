@@ -1,0 +1,9 @@
+{
+    "task": "subtitle",
+    "input_dirs": [
+        "/path/to/your/videos"
+    ],
+    "_comment_output": "removed output_dir to enable in-place processing (overwrite source)",
+    "remove_subtitle": true,
+    "_comment": "This task embeds subtitles (srt/ass) into video (mp4) using stream copy. No transcoding."
+}

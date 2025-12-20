@@ -8,5 +8,9 @@
     "use_gpu": false,
     "resolution": "1080p",
     "delete_source": false,
+    "embed_subtitles": false,
+    "remove_subtitle": false,
+    "compatibility_mode": false,
+    "test": false,
     "use_suffix": false
 }

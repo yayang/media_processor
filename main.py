@@ -12,6 +12,7 @@ from media_processor.runner import (
     batch_timelapse,
     add_chapters_runner,
     batch_merge_runner,
+    batch_subtitle_runner,
 )
 
 app = typer.Typer(help="Media Processor CLI")
@@ -60,10 +61,6 @@ def run(
         print("❌ Missing 'task' field in params.json")
         sys.exit(1)
 
-    if not output_dir:
-        print("❌ Missing 'output_dir' field in params.json")
-        sys.exit(1)
-
     print(f"🚀 Launching Task: {task_type.upper()}")
 
     if task_type == "audio":
@@ -87,6 +84,10 @@ def run(
             target_resolution=params.get("resolution", "1080p"),
             delete_source=params.get("delete_source", False),
             use_suffix=params.get("use_suffix", False),
+            compatibility_mode=params.get("compatibility_mode", False),
+            embed_subtitles=params.get("embed_subtitles", False),
+            remove_subtitle=params.get("remove_subtitle", False),
+            test_mode=params.get("test", False),
         )
 
     elif task_type == "timelapse":
@@ -111,9 +112,17 @@ def run(
             input_dirs=params.get("input_dirs", []), output_dir=output_dir
         )
 
+    elif task_type == "subtitle":
+        # output_dir is optional for subtitle task (In-place processing)
+        batch_subtitle_runner.run(
+            input_dirs=params.get("input_dirs", []),
+            output_dir=output_dir,  # Can be None
+            remove_subtitle=params.get("remove_subtitle", True),
+        )
+
     else:
         print(f"❌ Unknown task type: {task_type}")
-        print("Available tasks: audio, convert, timelapse, chapter, merge")
+        print("Available tasks: audio, convert, timelapse, chapter, merge, subtitle")
         sys.exit(1)
 
 

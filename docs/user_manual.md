@@ -54,6 +54,13 @@ python main.py run
 - `use_gpu`: `true` (fast, larger size) or `false` (slower, better compression).
 - `resolution`: `720p` or `1080p`.
 - `delete_source`: `true` to delete original files after success (Use with caution!).
+- `compatibility_mode`: `true` to enable maximum compatibility for older TVs (Deinterlace, YUV420P, High@4.1).
+- `embed_subtitles`: `true` to automatically detect and embed `.srt`/`.ass` subtitles (Default: `false`).
+- `remove_subtitle`: `true` to delete original subtitle file after embedding (Default: `false`).
+- `test`: `true` to only process the first 3 minutes for testing (Default: `false`).
+- **New Features**:
+    - **Multi-Audio**: Automatically preserves key audio tracks (stereo).
+    - **Soft Subtitles**: Automatically detects and embeds `.srt`/`.ass`/`.vtt` files found with the same filename.
 
 ### Task: `audio`
 - `batch_size`: Number of videos to merge into one MP3. `0` means merge all into one file.
@@ -67,6 +74,12 @@ python main.py run
 
 ### Task: `merge`
 - No extra params. Simply merges files per folder.
+
+- `input_dirs`: List of folders to scan.
+- `output_dir`: Optional. If removed, performs **In-Place** processing (overwrites source).
+- `remove_subtitle`: `true` to delete original subtitle file after success (Default: `true`).
+- **Note**: This task does NOT transcode video/audio. It uses **Stream Copy** for blazing fast speed.
+- Output files will be forced to `.mp4` container for subtitle compatibility.
 
 ## 📖 Cookbook (Examples)
 
@@ -103,7 +116,10 @@ python main.py run
         "output_dir": "/path/to/your/output/videos",
         "use_gpu": false,
         "resolution": "1080p",
-        "delete_source": false
+        "delete_source": false,
+        "embed_subtitles": false,
+        "remove_subtitle": false,
+        "test": false
     }
     ```
 3.  Run:
@@ -173,4 +189,22 @@ python main.py run
 3.  Run:
     ```bash
     make run config=params/merge.json
+    ```
+
+### 6. Subtitle Embedding (No Re-encoding)
+**Goal**: Quickly add subtitles to videos without changing quality (Stream Copy).
+
+1.  Create config: `cp params/examples/subtitle.json params/subtitle.json` (You may need to create this example manually first or just copy another one)
+2.  Edit `params/subtitle.json`:
+    ```json
+    {
+        "task": "subtitle",
+        "input_dirs": ["/path/to/videos"],
+        "output_dir": "/path/to/output_with_subs",
+        "delete_source": false
+    }
+    ```
+3.  Run:
+    ```bash
+    make run config=params/subtitle.json
     ```
